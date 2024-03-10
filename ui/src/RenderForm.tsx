@@ -3,7 +3,6 @@ import './App.css';
 import {Form} from '@bpmn-io/form-js';
 import "@bpmn-io/form-js/dist/assets/form-js.css";
 import axios from "axios";
-import FileDownload from "js-file-download";
 
 function RenderForm(props: any) {
     const [renderForm, setRenderForm] = useState<Form>()
@@ -36,13 +35,18 @@ function RenderForm(props: any) {
         const config = {
             headers: {
                 'content-type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Access-Control-Allow-Origin': '*',
             },
         };
         const url = 'http://localhost:8080/api/data/' + props.schema.templateId;
         axios.post(url, data, config).then((response) => {
-            FileDownload(response.data, 'filled_form', "application/pdf");
+            // FileDownload(response.data, 'filled_form', "application/pdf");
+            let filledFormURL = 'http://localhost:8080/api/cta/' + response.data;
+            props.onSubmission(response.data)
+            // window.open(filledFormURL)
         }).catch(reason => console.log(reason));
+
+
     }
 
     return (

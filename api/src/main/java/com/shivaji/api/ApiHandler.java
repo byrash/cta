@@ -7,6 +7,8 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -15,6 +17,10 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.apache.pdfbox.pdmodel.interactive.action.PDAction;
 import org.apache.pdfbox.pdmodel.interactive.action.PDActionJavaScript;
 import org.apache.pdfbox.pdmodel.interactive.action.PDFormFieldAdditionalActions;
@@ -28,6 +34,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -44,13 +51,110 @@ public class ApiHandler {
 
   private Map<String, Path> templateMap = new HashMap<>();
   private Map<String, Path> filledMap = new HashMap<>();
+  private Map<String, Path> cocMap = new HashMap<>();
   private final Path basePath = Paths.get("./uploads/");
+
+  @GetMapping(value = "/cta/{filledFormID}", produces = MediaType.APPLICATION_PDF_VALUE)
+  public ResponseEntity<Resource> getFilledFormForDisplay(
+      @PathVariable("filledFormID") String filledFormID) throws IOException {
+    Path renderedForm = filledMap.get(filledFormID);
+    ByteArrayResource resource = new ByteArrayResource(Files.readAllBytes(renderedForm));
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_PDF);
+    headers.add(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=" + "download.pdf");
+    headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+    return ResponseEntity.ok()
+        .headers(headers)
+        .contentLength(resource.contentLength())
+        .contentType(MediaType.APPLICATION_PDF)
+        .body(resource);
+  }
+
+  @GetMapping(value = "/coc/{filledFormID}", produces = MediaType.APPLICATION_PDF_VALUE)
+  public ResponseEntity<Resource> getCocForDisplay(
+      @PathVariable("filledFormID") String filledFormID) throws IOException {
+    Path renderedForm = cocMap.get(filledFormID);
+    ByteArrayResource resource = new ByteArrayResource(Files.readAllBytes(renderedForm));
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_PDF);
+    headers.add(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=" + "download.pdf");
+    headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+    return ResponseEntity.ok()
+        .headers(headers)
+        .contentLength(resource.contentLength())
+        .contentType(MediaType.APPLICATION_PDF)
+        .body(resource);
+  }
+
+  @PostMapping(value = "/cta/{filledFormID}")
+  public ResponseEntity<String> ctaSubmission(@PathVariable("filledFormID") String filledFormID)
+      throws IOException {
+    Path filledForm = filledMap.get(filledFormID);
+    String cocPath = "./coc/" + filledForm.getFileName();
+    try (PDDocument pdfDocument = Loader.loadPDF(new File(filledForm.toString()))) {
+      PDPage page = new PDPage();
+      pdfDocument.addPage(page);
+      PDPageContentStream contentStream = new PDPageContentStream(pdfDocument, page);
+      PDType1Font pdType1Font = new PDType1Font(Standard14Fonts.FontName.TIMES_ROMAN);
+
+      // Begin the Content stream
+      contentStream.beginText();
+      // Setting the font to the Content stream
+      contentStream.setFont(pdType1Font, 12);
+      // Setting the position for the line
+      contentStream.newLineAtOffset(25, 100);
+      String text = "Document ID " + filledFormID;
+      // Adding text in the form of string
+      contentStream.showText(text);
+      // Ending the content stream
+      contentStream.endText();
+
+      // Begin the Content stream
+      contentStream.beginText();
+      // Setting the position for the line
+      contentStream.newLineAtOffset(25, 150);
+      text =
+          "Signed On "
+              + new SimpleDateFormat("MM.dd.yyyy").format(Calendar.getInstance().getTime());
+      // Adding text in the form of string
+      contentStream.showText(text);
+      // Ending the content stream
+      contentStream.endText();
+
+      // Begin the Content stream
+      contentStream.beginText();
+      // Setting the position for the line
+      contentStream.newLineAtOffset(25, 200);
+      text = "Document Name " + filledForm.getFileName();
+      // Adding text in the form of string
+      contentStream.showText(text);
+      // Ending the content stream
+      contentStream.endText();
+
+      // Begin the Content stream
+      contentStream.beginText();
+      // Setting the position for the line
+      contentStream.newLineAtOffset(25, 250);
+      text = "Location " + filledForm.toString();
+      // Adding text in the form of string
+      contentStream.showText(text);
+      // Ending the content stream
+      contentStream.endText();
+
+      // Closing the content stream
+      contentStream.close();
+      pdfDocument.save(cocPath);
+    }
+    String uuid = generateUUID();
+    cocMap.put(uuid, Path.of(cocPath));
+    return ResponseEntity.ok(uuid);
+  }
 
   @PostMapping(
       value = "/data/{templateId}",
       consumes = MediaType.APPLICATION_JSON_VALUE,
       produces = MediaType.APPLICATION_PDF_VALUE)
-  public ResponseEntity<Resource> submitData(
+  public ResponseEntity<String> submitData(
       @PathVariable("templateId") String templateId,
       @RequestBody Map<String, String> data,
       HttpServletResponse response)
@@ -59,18 +163,9 @@ public class ApiHandler {
       return ResponseEntity.badRequest().build();
     }
     Path renderedForm = fillForm(templateMap.get(templateId), data);
-    ByteArrayResource resource = new ByteArrayResource(Files.readAllBytes(renderedForm));
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_PDF);
-    headers.add(
-        HttpHeaders.CONTENT_DISPOSITION,
-        "attachment; filename=" + "download.pdf");
-    headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
-    return ResponseEntity.ok()
-        .headers(headers)
-        .contentLength(resource.contentLength())
-        .contentType(MediaType.APPLICATION_PDF)
-        .body(resource);
+    String uuid = generateUUID();
+    filledMap.put(uuid, renderedForm);
+    return ResponseEntity.ok(uuid);
   }
 
   @ResponseBody
@@ -84,6 +179,7 @@ public class ApiHandler {
             .map(
                 entry -> {
                   String key = entry.getKey();
+                  PDField pdField = entry.getValue();
                   return Component.builder()
                       .key(key)
                       .label(key)
@@ -117,7 +213,7 @@ public class ApiHandler {
             (key, value) -> {
               PDTextField field = (PDTextField) acroForm.getField(key);
               try {
-                field.setValue(value);
+                field.setValue(getFormattedValue(field, value));
               } catch (IOException e) {
                 throw new RuntimeException(e);
               }
@@ -142,18 +238,6 @@ public class ApiHandler {
                 results.put(pdField.getPartialName(), pdField);
               }
             });
-
-        // Retrieve an individual field and set its value.
-        //        PDTextField field = (PDTextField) acroForm.getField("DayPhone");
-        //        field.setValue("7033889277");
-
-        // If a field is nested within the form tree a fully qualified name
-        // might be provided to access the field.
-        //        field = (PDTextField) acroForm.getField("AccountNumber");
-        //        field.setValue(getFormattedValue(field, "123456789"));
-
-        //        field = (PDTextField) acroForm.getField("Owner_Name");
-        //        field.setValue(getFormattedValue(field, "Shivaji Byrapaneni"));
       }
 
       // Save and close the filled out form.
