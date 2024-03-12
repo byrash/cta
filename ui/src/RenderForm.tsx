@@ -21,7 +21,7 @@ function RenderForm(props: any) {
         // renderForm?.on("submit", ({data, errors}) => {
         //     console.log(data, errors);
         // });
-        renderForm?.importSchema(props.schema,)
+        renderForm?.importSchema(props.schema,props.schema.data)
             .catch((error) => console.error("cannot import form schema", error));
     }, [props.schema]);
 

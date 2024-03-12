@@ -174,21 +174,23 @@ public class ApiHandler {
       @RequestParam(name = "file", required = false) MultipartFile file) throws IOException {
     Path filePath = write(file, basePath);
     Map<String, PDField> PDFieldMap = loadFields(filePath);
+    Map<String, Object> data = new HashMap<>();
     List<Component> components =
         PDFieldMap.entrySet().stream()
             .map(
                 entry -> {
                   String key = entry.getKey();
                   PDField pdField = entry.getValue();
+                  data.put(key, pdField.getValueAsString());
                   return Component.builder()
                       .key(key)
                       .label(key)
-                      .type("textfield")
+                      .type(getFieldType(pdField))
                       .validate(Validate.builder().required(false).build())
                       .build();
                 })
             .collect(Collectors.toList());
-    Schema s = Schema.builder().type("default").components(components).build();
+    Schema s = Schema.builder().type("default").components(components).data(data).build();
     String uuid = generateUUID();
     s.setTemplateId(uuid);
     templateMap.put(uuid, filePath);
@@ -269,5 +271,20 @@ public class ApiHandler {
 
   public String generateUUID() {
     return UUID.randomUUID().toString().replace("-", "");
+  }
+
+  public String getFieldType(PDField field) {
+    switch (field.getClass().getSimpleName()) {
+      case "PDTextField":
+        return "textfield";
+      case "PDCheckBox":
+        return "checklist";
+      case "PDRadioButton":
+        return "radio";
+      case "PDChoice":
+        return "select";
+      default:
+        return "textfield";
+    }
   }
 }
