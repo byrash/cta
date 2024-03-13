@@ -212,7 +212,7 @@ public class ApiHandler {
       if (acroForm != null) {
         data.forEach(
             (key, value) -> {
-              PDField field = acroForm.getField(key);
+              PDField field =  acroForm.getField(key);
               if (field != null) {
                 try {
                   field.setValue(getFormattedValue(field, value));

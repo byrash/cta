@@ -27,6 +27,7 @@ function ClickToAgree(props: any) {
         render ? (<form onSubmit={handleSubmit}>
             <iframe src={props.filledFormURL} width="90%" height={900}/>
             <br/>
+            <br/>
             <button type="submit">Agree</button>
         </form>) : <span/>
     );
