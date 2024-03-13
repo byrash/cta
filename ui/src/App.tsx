@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import FileUpload from "./FileUpload";
 import RenderForm from "./RenderForm";
 import ClickToAgree from "./ClickToAgree";
+import MultiSigner from "./MultiSigner";
 
 function App() {
 
@@ -22,6 +23,7 @@ function App() {
             <hr/>
             <FileUpload onFileUpload={setSchema}/>
             <RenderForm schema={schema} onSubmission={setFilledFormID}/>
+            <MultiSigner/>
             {/*<button onClick={resetSchema}>Reset</button>*/}
         </div>
     );
