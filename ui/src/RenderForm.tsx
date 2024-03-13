@@ -45,8 +45,6 @@ function RenderForm(props: any) {
             props.onSubmission(response.data)
             // window.open(filledFormURL)
         }).catch(reason => console.log(reason));
-
-
     }
 
     return (

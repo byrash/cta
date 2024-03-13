@@ -26,7 +26,6 @@ import org.apache.pdfbox.pdmodel.interactive.action.PDActionJavaScript;
 import org.apache.pdfbox.pdmodel.interactive.action.PDFormFieldAdditionalActions;
 import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
 import org.apache.pdfbox.pdmodel.interactive.form.PDField;
-import org.apache.pdfbox.pdmodel.interactive.form.PDTextField;
 import org.apache.pdfbox.pdmodel.interactive.form.ScriptingHandler;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -213,11 +212,13 @@ public class ApiHandler {
       if (acroForm != null) {
         data.forEach(
             (key, value) -> {
-              PDTextField field = (PDTextField) acroForm.getField(key);
-              try {
-                field.setValue(getFormattedValue(field, value));
-              } catch (IOException e) {
-                throw new RuntimeException(e);
+              PDField field = acroForm.getField(key);
+              if (field != null) {
+                try {
+                  field.setValue(getFormattedValue(field, value));
+                } catch (IOException e) {
+                  throw new RuntimeException(e);
+                }
               }
             });
       }
@@ -248,7 +249,7 @@ public class ApiHandler {
     return results;
   }
 
-  public static String getFormattedValue(PDTextField field, String apValue) {
+  public static String getFormattedValue(PDField field, String apValue) {
     // format the field value for the appearance if there is scripting support and the field
     // has a format event
     PDFormFieldAdditionalActions actions = field.getActions();

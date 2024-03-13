@@ -19,11 +19,11 @@ function App() {
 
     return (
         <div className="App">
+            <MultiSigner filledFormId={filledFormId} filledFormURL={filledFormURL}/><br/>
             <ClickToAgree filledFormURL={filledFormURL} filleFormID={filledFormId}/><br/>
             <hr/>
             <FileUpload onFileUpload={setSchema}/>
-            <RenderForm schema={schema} onSubmission={setFilledFormID}/>
-            <MultiSigner/>
+            <RenderForm schema={schema} onSubmission={setFilledFormID}/><br/>
             {/*<button onClick={resetSchema}>Reset</button>*/}
         </div>
     );
