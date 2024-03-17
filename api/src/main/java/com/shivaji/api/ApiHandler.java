@@ -1,9 +1,14 @@
 package com.shivaji.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -51,6 +56,7 @@ public class ApiHandler {
   private Map<String, Path> templateMap = new HashMap<>();
   private Map<String, Path> filledMap = new HashMap<>();
   private Map<String, Path> cocMap = new HashMap<>();
+  private Map<String, String> ctaRequests = new HashMap<>();
   private final Path basePath = Paths.get("./uploads/");
 
   @GetMapping(value = "/cta/{filledFormID}", produces = MediaType.APPLICATION_PDF_VALUE)
@@ -85,12 +91,56 @@ public class ApiHandler {
         .body(resource);
   }
 
-  @PostMapping(value = "/signer/cta")
-  public ResponseEntity<Boolean> cta(@RequestBody Map<String, String> req)
+  @GetMapping(value = "/cta/requests", produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<Map<String, String>> getCtaRequests() throws IOException {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+    return ResponseEntity.ok()
+        .headers(headers)
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(ctaRequests);
+  }
+
+  @PostMapping(value = "/signer/cta/{filledFormID}/complete/{msgKey}")
+  public ResponseEntity<String> ctaComplete(
+      @PathVariable("filledFormID") String filledFormID, @PathVariable("msgKey") String msgKey)
+      throws Exception {
+    System.out.println(filledFormID);
+    System.out.println(msgKey);
+    sendMessage(msgKey);
+    ctaRequests.remove(msgKey);
+    return ResponseEntity.ok("");
+  }
+
+  @PostMapping(value = "/signer/cta/{filledFormID}")
+  public ResponseEntity<String> cta(
+      @PathVariable("filledFormID") String filledFormID, @RequestBody Map<String, String> req)
       throws InterruptedException {
     Thread.sleep((long) (Math.random() * 5000));
     System.out.println(Calendar.getInstance().getTime() + "CTA Request -->" + req);
-    return ResponseEntity.ok(true);
+    ctaRequests.put(
+        "msg_" + req.get("order") + "_" + req.get("name") + "_" + req.get("role"), filledFormID);
+    return ResponseEntity.ok("");
+  }
+
+  public HttpResponse<String> sendMessage(String msgName) throws Exception {
+    HttpClient client = HttpClient.newHttpClient();
+    Map<String, String> body = new HashMap<>(1);
+    body.put("messageName", msgName);
+    var objectMapper = new ObjectMapper();
+    String requestBody = objectMapper.writeValueAsString(body);
+    HttpRequest request =
+        HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:8081/engine-rest/message"))
+            .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+            .build();
+
+    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+    if (response.statusCode() != 204) {
+      throw new RuntimeException("Invalid Status code " + response.statusCode());
+    }
+    return response;
   }
 
   @PostMapping(value = "/signer/reminder")
