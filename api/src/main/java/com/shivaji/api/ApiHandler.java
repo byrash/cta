@@ -85,6 +85,27 @@ public class ApiHandler {
         .body(resource);
   }
 
+  @PostMapping(value = "/signer/cta")
+  public ResponseEntity<Boolean> cta(@RequestBody Map<String, String> req)
+      throws InterruptedException {
+    System.out.println(Calendar.getInstance().getTime() + "Started -->" + req);
+    Thread.sleep((long) (Math.random() * 5000));
+    System.out.println(Calendar.getInstance().getTime() + "Completed -->" + req);
+    return ResponseEntity.ok(true);
+  }
+
+  @PostMapping(value = "/signer/reminder")
+  public ResponseEntity<Boolean> reminder(@RequestBody Map<String, String> req) {
+    System.out.println(Calendar.getInstance().getTime() + "" + req);
+    return ResponseEntity.ok(true);
+  }
+
+  @PostMapping(value = "/recall/cta")
+  public ResponseEntity<Boolean> recall(@RequestBody Map<String, String> req) {
+    System.out.println(Calendar.getInstance().getTime() + "" + req);
+    return ResponseEntity.ok(true);
+  }
+
   @PostMapping(value = "/cta/{filledFormID}")
   public ResponseEntity<String> ctaSubmission(@PathVariable("filledFormID") String filledFormID)
       throws IOException {
@@ -212,7 +233,7 @@ public class ApiHandler {
       if (acroForm != null) {
         data.forEach(
             (key, value) -> {
-              PDField field =  acroForm.getField(key);
+              PDField field = acroForm.getField(key);
               if (field != null) {
                 try {
                   field.setValue(getFormattedValue(field, value));
