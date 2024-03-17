@@ -88,21 +88,20 @@ public class ApiHandler {
   @PostMapping(value = "/signer/cta")
   public ResponseEntity<Boolean> cta(@RequestBody Map<String, String> req)
       throws InterruptedException {
-    System.out.println(Calendar.getInstance().getTime() + "Started -->" + req);
     Thread.sleep((long) (Math.random() * 5000));
-    System.out.println(Calendar.getInstance().getTime() + "Completed -->" + req);
+    System.out.println(Calendar.getInstance().getTime() + "CTA Request -->" + req);
     return ResponseEntity.ok(true);
   }
 
   @PostMapping(value = "/signer/reminder")
   public ResponseEntity<Boolean> reminder(@RequestBody Map<String, String> req) {
-    System.out.println(Calendar.getInstance().getTime() + "" + req);
+    System.out.println(Calendar.getInstance().getTime() + "Reminder Request -->" + req);
     return ResponseEntity.ok(true);
   }
 
   @PostMapping(value = "/recall/cta")
-  public ResponseEntity<Boolean> recall(@RequestBody Map<String, String> req) {
-    System.out.println(Calendar.getInstance().getTime() + "" + req);
+  public ResponseEntity<Boolean> recall(@RequestBody String req) {
+    System.out.println(Calendar.getInstance().getTime() + "CTA Recall Request -->" + req);
     return ResponseEntity.ok(true);
   }
 
