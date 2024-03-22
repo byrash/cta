@@ -1,0 +1,241 @@
+{
+	"info": {
+		"_postman_id": "03f22137-5d33-41ee-bf0b-9d5ba4683078",
+		"name": "Camunda",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "1545583"
+	},
+	"item": [
+		{
+			"name": "Start Process",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = JSON.parse(responseBody)",
+							"postman.setEnvironmentVariable(\"processInstanceId\", jsonData.id)"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"variables\":\n    {\n        \"data\":\n        {\n            \"value\": \"{\\\"filledFormId\\\":\\\"23b54abbf60a4a5c8feef38a77c6bfd9\\\",\\\"filledFormURL\\\":\\\"http:\\/\\/localhost:8080\\/api\\/cta\\/23b54abbf60a4a5c8feef38a77c6bfd9\\\",\\\"signers\\\":[[{\\\"order\\\":\\\"1\\\",\\\"name\\\":\\\"A\\\",\\\"email\\\":\\\"A\\\",\\\"role\\\":\\\"Signer\\\"}],[{\\\"order\\\":\\\"2\\\",\\\"name\\\":\\\"B\\\",\\\"email\\\":\\\"B\\\",\\\"role\\\":\\\"Copy\\\"},{\\\"order\\\":\\\"2\\\",\\\"name\\\":\\\"C\\\",\\\"email\\\":\\\"C\\\",\\\"role\\\":\\\"Signer\\\"}]]}\",\n            \"type\": \"json\",\n            \"valueInfo\":\n            {\n                \"serializationDataFormat\": \"application/json\"\n            }\n        }\n    },\n    \"businessKey\": \"myBusinessKey\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/engine-rest/process-definition/key/Process_1xls0ud/start",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"engine-rest",
+						"process-definition",
+						"key",
+						"Process_1xls0ud",
+						"start"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Send Message",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"messageName\":\"msg_1_A_Signer\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/engine-rest/message",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"engine-rest",
+						"message"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Messages Waiting",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = JSON.parse(responseBody)",
+							"postman.setEnvironmentVariable(\"processInstanceId\", jsonData.id)"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"messageName\":\"msg_1_A_Signer\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/engine-rest/event-subscription?processInstanceId={{processInstanceId}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"engine-rest",
+						"event-subscription"
+					],
+					"query": [
+						{
+							"key": "processInstanceId",
+							"value": "{{processInstanceId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get History",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"variables\":\n    {\n        \"data\":\n        {\n            \"value\": \"{\\\"filledFormId\\\":\\\"23b54abbf60a4a5c8feef38a77c6bfd9\\\",\\\"filledFormURL\\\":\\\"http:\\/\\/localhost:8080\\/api\\/cta\\/23b54abbf60a4a5c8feef38a77c6bfd9\\\",\\\"signers\\\":[[{\\\"order\\\":\\\"1\\\",\\\"name\\\":\\\"A\\\",\\\"email\\\":\\\"A\\\",\\\"role\\\":\\\"Signer\\\"}],[{\\\"order\\\":\\\"2\\\",\\\"name\\\":\\\"B\\\",\\\"email\\\":\\\"B\\\",\\\"role\\\":\\\"Copy\\\"},{\\\"order\\\":\\\"2\\\",\\\"name\\\":\\\"C\\\",\\\"email\\\":\\\"C\\\",\\\"role\\\":\\\"Signer\\\"}]]}\",\n            \"type\": \"json\",\n            \"valueInfo\":\n            {\n                \"serializationDataFormat\": \"application/json\"\n            }\n        }\n    },\n    \"businessKey\": \"Shivaji1\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/engine-rest/history/process-instance",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"engine-rest",
+						"history",
+						"process-instance"
+					],
+					"query": [
+						{
+							"key": "processInstanceId",
+							"value": "{{processInstanceId}}",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CTA API Test",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/signer/cta",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"signer",
+						"cta"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
