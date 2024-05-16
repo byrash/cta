@@ -1,27 +1,16 @@
 package com.shivaji.api;
 
-import java.util.UUID;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Bean;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpOutputMessage;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.HttpMessageNotWritableException;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.util.StreamUtils;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-import java.nio.charset.Charset;
+import java.util.UUID;
+
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpOutputMessage;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.HttpMessageNotWritableException;
+import org.springframework.util.StreamUtils;
 
 class MultipartHttpMessageConverter implements HttpMessageConverter<Multipart> {
 
@@ -50,23 +39,17 @@ class MultipartHttpMessageConverter implements HttpMessageConverter<Multipart> {
   @Override
   public void write(Multipart multipart, MediaType contentType, HttpOutputMessage outputMessage)
       throws IOException, HttpMessageNotWritableException {
-    String boundary = UUID.randomUUID().toString(); // Generate a unique boundary
-
-    // Write boundary marker at the beginning
-    String boundaryMarker = "--" + boundary + "\r\n";
-    MediaType outContentType = outputMessage.getHeaders().getContentType();
-    if (outContentType != null && outContentType.getCharset() != null) {
-      StreamUtils.copy(
-          boundaryMarker.getBytes(outContentType.getCharset()), outputMessage.getBody());
-    } else {
-      throw new IllegalArgumentException("Charset not specified in Content-Type header");
-    }
 
     // Write each part
+    HttpHeaders headers = outputMessage.getHeaders();
     for (Part part : multipart.parts) {
+      String boundary = UUID.randomUUID().toString(); // Generate a unique boundary
+
       // Write part headers
       StringBuilder headersBuilder = new StringBuilder();
-      headersBuilder.append("Content-Type: ").append(part.contentType).append("\r\n");
+      headersBuilder.append("Content-Type: ").append(part.contentType)
+          .append("; boundary=").append(boundary)
+          .append("\r\n");
       if (part.filename != null) {
         headersBuilder
             .append("Content-Disposition: attachment; filename=\"")
@@ -77,29 +60,24 @@ class MultipartHttpMessageConverter implements HttpMessageConverter<Multipart> {
       StreamUtils.copy(
           headersBuilder
               .toString()
-              .getBytes(outputMessage.getHeaders().getContentType().getCharset()),
+              .getBytes(headers.getContentType().getCharset()),
           outputMessage.getBody());
 
       // Write part content
       if (part.content != null) {
         StreamUtils.copy(
-            part.content.getBytes(outputMessage.getHeaders().getContentType().getCharset()),
+            part.content.getBytes(headers.getContentType().getCharset()),
             outputMessage.getBody());
       } else if (part.fileContent != null) {
         StreamUtils.copy(part.fileContent, outputMessage.getBody());
       }
 
       // Write boundary marker between parts
+      String finalBoundaryMarker = "\r\n--" + boundary + "--\r\n";
       StreamUtils.copy(
-          boundaryMarker.getBytes(outputMessage.getHeaders().getContentType().getCharset()),
+          finalBoundaryMarker.getBytes(headers.getContentType().getCharset()),
           outputMessage.getBody());
     }
-
-    // Write final boundary marker
-    String finalBoundaryMarker = "--" + boundary + "--\r\n";
-    StreamUtils.copy(
-        finalBoundaryMarker.getBytes(outputMessage.getHeaders().getContentType().getCharset()),
-        outputMessage.getBody());
   }
 }
 

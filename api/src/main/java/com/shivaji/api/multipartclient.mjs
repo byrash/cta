@@ -7,36 +7,36 @@ fetch('http://localhost:8080/download')
             throw new Error('Network response was not ok');
         }
         return response.text()
-            .then(responseText => ({ response, responseText })); // Pass both response and responseText
+            .then(responseText => ({response, responseText})); // Pass both response and responseText
     })
-    .then(({ response, responseText }) => { // Receive both response and responseText
+    .then(({response, responseText}) => { // Receive both response and responseText
         // console.log('Response text:', responseText); // Log the entire response text
 
-        // Extract the boundary marker from the Content-Type header
-        const contentTypeHeader = response.headers.get('Content-Type');
-        const boundaryMatch = contentTypeHeader.match(/boundary=(.+)/);
+        // Find the boundary marker within the response text
+        const boundaryMatch = responseText.match(/boundary=(.+)/g);
         if (!boundaryMatch) {
-            throw new Error('Boundary marker not found in Content-Type header');
+            throw new Error('Boundary marker not found in response text');
         }
-        const boundary = '--' + boundaryMatch[1];
-        console.log('Boundary marker:', boundary); // Log the boundary marker
+        let localText = responseText;
 
-        // Split the response text into parts based on the boundary marker
-        const parts = responseText.split(boundary);
-        console.log('Parts:', parts); // Log the parts array
-
-        // Remove first and last parts (empty parts)
-        parts.shift();
-        parts.pop();
-
-        // Parse each part
-        for (const part of parts) {
+        boundaryMatch.forEach((boundry) => {
+            if (!localText) {
+                return
+            }
+            let boundaryEnd = "--" + boundry.replace("boundary=", '').trim()
+            let parts = localText.split(boundaryEnd)
+            if (parts.length > 0) {
+                localText = parts[1];
+            } else {
+                localText = null;
+            }
+            let part = parts[0];
             // Split headers and content
             const [headers, content] = part.split('\r\n\r\n');
 
             // Parse headers
-            const contentTypeHeader = headers.match(/Content-Type: (.+)/);
-            const contentType = contentTypeHeader ? contentTypeHeader[1] : 'text/plain';
+            const contentTypeHeader = headers.match(/Content-Type: (.+);/);
+            const contentType = contentTypeHeader ? contentTypeHeader[1].trim() : 'text/plain';
 
             // Parse content
             const contentData = content.trim();
@@ -51,13 +51,16 @@ fetch('http://localhost:8080/download')
                 const filename = `output_${Date.now()}.pdf`;
                 fs.writeFileSync(filename, contentData, 'binary');
                 console.log(`PDF content saved to ${filename}`);
+                //TODO: Handle Stream of data coming in
             } else {
                 // Handle other content types
-                console.log('Other content type:', contentType);
+                console.log('Other content type:', contentType, 'Content: ', content);
             }
-        }
+        })
     })
     .catch(error => {
         console.error('There was a problem with the fetch operation:', error);
     });
+
+
 
