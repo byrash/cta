@@ -1,6 +1,7 @@
 package com.shivaji.api;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -18,7 +19,9 @@ public class FileDownloadWithPaylod {
   @GetMapping(value = "/download", produces = MediaType.MULTIPART_MIXED_VALUE)
   public ResponseEntity<?> getMultipartMixedResponse() {
     HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.MULTIPART_MIXED);
+    //    headers.setContentType(MediaType.MULTIPART_MIXED);
+    MediaType contentType = new MediaType("multipart", "mixed", StandardCharsets.UTF_8);
+    headers.setContentType(contentType);
 
     Multipart mixed = new Multipart();
     mixed.parts =
