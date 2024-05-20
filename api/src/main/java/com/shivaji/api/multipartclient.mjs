@@ -1,15 +1,16 @@
 import fetch from 'node-fetch';
 import fs from 'fs';
+import writeFile from 'fs/promises';
 
 fetch('http://localhost:8080/download')
-    .then(response => {
+    .then((response) => {
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
-        return response.text()
-            .then(responseText => ({response, responseText})); // Pass both response and responseText
+        return response.text().then((responseText) => ({ response, responseText })); // Pass both response and responseText
     })
-    .then(({response, responseText}) => { // Receive both response and responseText
+    .then(({ response, responseText }) => {
+        // Receive both response and responseText
         // console.log('Response text:', responseText); // Log the entire response text
 
         // Find the boundary marker within the response text
@@ -17,25 +18,19 @@ fetch('http://localhost:8080/download')
         if (!boundaryMatch) {
             throw new Error('Boundary marker not found in response text');
         }
-        let localText = responseText;
+        let boundary = boundaryMatch[0].replace('boundary=', '').trim();
+        let boundaryStart = '--' + boundary;
+        let data = responseText.split(boundaryStart);
 
-        boundaryMatch.forEach((boundry) => {
-            if (!localText) {
-                return
-            }
-            let boundaryEnd = "--" + boundry.replace("boundary=", '').trim()
-            let parts = localText.split(boundaryEnd)
-            if (parts.length > 0) {
-                localText = parts[1];
-            } else {
-                localText = null;
-            }
-            let part = parts[0];
+        data.splice(1).forEach((blockOfData) => {
             // Split headers and content
-            const [headers, content] = part.split('\r\n\r\n');
+            const [headers, content] = blockOfData.split('\r\n\r\n');
+            if (!content || !headers) {
+                return;
+            }
 
             // Parse headers
-            const contentTypeHeader = headers.match(/Content-Type: (.+);/);
+            const contentTypeHeader = headers.match(/Content-Type: (.+)/);
             const contentType = contentTypeHeader ? contentTypeHeader[1].trim() : 'text/plain';
 
             // Parse content
@@ -56,11 +51,8 @@ fetch('http://localhost:8080/download')
                 // Handle other content types
                 console.log('Other content type:', contentType, 'Content: ', content);
             }
-        })
+        });
     })
-    .catch(error => {
+    .catch((error) => {
         console.error('There was a problem with the fetch operation:', error);
     });
-
-
-
